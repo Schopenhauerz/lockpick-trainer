@@ -32,10 +32,10 @@ export function useGameEngine() {
   const [stats, setStats] = useState({ successes: 0, failures: 0, streak: 0, bestStreak: 0 });
   const [feedback, setFeedback] = useState(null); // null|'success'|'fail'|'fullSuccess'
   const [config, setConfig] = useState({
-    speedMultiplier: 1.0,
+    speedMultiplier: 2.0,
     inputLatency: 0,
     sweetSpotWidth: 0.12,  // last 12% of track (hard default)
-    showSweetSpot: true,
+    showSweetSpot: false,
   });
 
   const rafRef        = useRef(null);
