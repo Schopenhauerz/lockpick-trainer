@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import './App.css';
 import { useGameEngine } from './hooks/useGameEngine';
@@ -45,6 +45,16 @@ export default function App() {
 
   const isShaking = feedback === 'fail';
 
+  const [scale, setScale] = useState(() =>
+    Math.min((window.innerWidth - 16) / ARENA_W, (window.innerHeight - 180) / ARENA_H, 1)
+  );
+  useEffect(() => {
+    const update = () =>
+      setScale(Math.min((window.innerWidth - 16) / ARENA_W, (window.innerHeight - 180) / ARENA_H, 1));
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
   return (
     <div style={{
       width: '100vw',
@@ -67,7 +77,8 @@ export default function App() {
         config={config}
       />
 
-      {/* Arena — shakes on fail */}
+      {/* Arena — scaled for mobile, shakes on fail */}
+      <div style={{ transform: `scale(${scale})`, transformOrigin: 'center center' }}>
       <motion.div
         animate={isShaking
           ? { x: [-9, 9, -7, 7, -4, 4, -1, 1, 0], y: [-4, 4, -3, 3, -1, 1, 0] }
@@ -171,6 +182,7 @@ export default function App() {
           />
         ))}
       </motion.div>
+      </div>
 
       <FeedbackOverlay feedback={feedback} />
       <ConfigPanel config={config} onUpdate={updateConfig} />

@@ -21,14 +21,14 @@ function StatBlock({ label, value, color = '#00aaff', sub }) {
   return (
     <div style={{
       textAlign: 'center',
-      padding: '10px 16px',
+      padding: '6px 10px',
       background: '#07070e',
       border: '1px solid #141424',
       borderRadius: 8,
-      minWidth: 80,
+      minWidth: 56,
     }}>
       <div style={{
-        fontSize: 28,
+        fontSize: 20,
         fontWeight: 'bold',
         color,
         fontFamily: 'Courier New',
@@ -61,12 +61,14 @@ export function HUD({ stats, phase, currentNode, nodeCount, segmentCount, sequen
       <div style={{
         position: 'fixed',
         top: 0, left: 0, right: 0,
-        padding: '12px 24px',
+        padding: '10px 16px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         background: 'linear-gradient(180deg, #07070e 0%, transparent 100%)',
         zIndex: 50,
+        flexWrap: 'wrap',
+        gap: 6,
       }}>
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -159,9 +161,9 @@ export function HUD({ stats, phase, currentNode, nodeCount, segmentCount, sequen
       {/* ── Stats — bottom left ──────────────────────────────────────────── */}
       <div style={{
         position: 'fixed',
-        bottom: 24, left: 24,
+        bottom: 16, left: 12,
         display: 'flex',
-        gap: 10,
+        gap: 6,
         zIndex: 50,
       }}>
         <StatBlock label="SUCCESSES" value={stats.successes} color="#00ff88" />
