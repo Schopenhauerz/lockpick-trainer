@@ -1,0 +1,48 @@
+/* Custom range slider styling */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #00aaff;
+  cursor: pointer;
+  border: 2px solid #0a0a0f;
+  box-shadow: 0 0 8px #00aaff88;
+  margin-top: -6px;
+}
+
+input[type='range']::-webkit-slider-runnable-track {
+  height: 4px;
+  background: transparent;
+  border-radius: 2px;
+}
+
+input[type='range']::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #00aaff;
+  cursor: pointer;
+  border: 2px solid #0a0a0f;
+  box-shadow: 0 0 8px #00aaff88;
+}
+
+input[type='range']:focus {
+  outline: none;
+}
+
+/* Number input */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+}
