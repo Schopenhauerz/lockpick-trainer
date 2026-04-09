@@ -32,7 +32,7 @@ export function useGameEngine() {
   const [stats, setStats] = useState({ successes: 0, failures: 0, streak: 0, bestStreak: 0 });
   const [feedback, setFeedback] = useState(null); // null|'success'|'fail'|'fullSuccess'
   const [config, setConfig] = useState({
-    speedMultiplier: 2.0,
+    speedMultiplier: 4.0,
     inputLatency: 0,
     sweetSpotWidth: 0.12,  // last 12% of track (hard default)
     showSweetSpot: false,
