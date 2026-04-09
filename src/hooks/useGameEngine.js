@@ -124,7 +124,8 @@ export function useGameEngine() {
     if (phaseRef.current !== 'running') return;
     // Expected key = key assigned to the DESTINATION node (currentNode + 1)
     const expected       = sequenceRef.current[currentNodeRef.current + 1];
-    const sweetSpotStart = SWEET_SPOT_END - configRef.current.sweetSpotWidth;
+    const activeWidth    = configRef.current.showSweetSpot ? configRef.current.sweetSpotWidth : 0.12;
+    const sweetSpotStart = SWEET_SPOT_END - activeWidth;
     const inSweetSpot    = capturedProgress >= sweetSpotStart && capturedProgress <= SWEET_SPOT_END;
     if (key === expected && inSweetSpot) {
       triggerSuccess();
