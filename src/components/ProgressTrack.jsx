@@ -17,8 +17,8 @@ export function ProgressTrack({ fromPos, toPos, progress, isActive, feedback, sw
 
   let fillColor = 'rgba(255,255,255,0.55)';
   if (isActive) {
-    if (progress >= sweetSpotStart && progress <= sweetSpotEnd) fillColor = '#00ff88';
-    if (progress > sweetSpotEnd)   fillColor = '#ffaa00';
+    if (showSweetSpot && progress >= sweetSpotStart && progress <= sweetSpotEnd) fillColor = '#00ff88';
+    if (showSweetSpot && progress > sweetSpotEnd)   fillColor = '#ffaa00';
     if (feedback === 'fail')       fillColor = '#ff2244';
   }
 
