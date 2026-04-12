@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 const DIRECTIONS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
-const SWEET_SPOT_END = 0.96;    // sweet spot always ends at 96% of track
+const SWEET_SPOT_END = 0.98;    // sweet spot always ends at 98% of track
 const NODE_COUNT = 5;           // nodes: A B C D E
 export const SEGMENT_COUNT = NODE_COUNT - 1; // 4 segments: A→B  B→C  C→D  D→E
 const BASE_DURATION = 2000;     // ms per segment at 1x speed
@@ -34,7 +34,7 @@ export function useGameEngine() {
   const [config, setConfig] = useState({
     speedMultiplier: 4.0,
     inputLatency: 0,
-    sweetSpotWidth: 0.13,  // 83-96% window
+    sweetSpotWidth: 0.15,  // 83-98% window
     showSweetSpot: false,
   });
 
@@ -124,7 +124,7 @@ export function useGameEngine() {
     if (phaseRef.current !== 'running') return;
     // Expected key = key assigned to the DESTINATION node (currentNode + 1)
     const expected       = sequenceRef.current[currentNodeRef.current + 1];
-    const activeWidth    = configRef.current.showSweetSpot ? configRef.current.sweetSpotWidth : 0.13;
+    const activeWidth    = configRef.current.showSweetSpot ? configRef.current.sweetSpotWidth : 0.15;
     const sweetSpotStart = SWEET_SPOT_END - activeWidth;
     const inSweetSpot    = capturedProgress >= sweetSpotStart && capturedProgress <= SWEET_SPOT_END;
     if (key === expected && inSweetSpot) {
