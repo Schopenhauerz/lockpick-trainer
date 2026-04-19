@@ -31,6 +31,7 @@ export function useGameEngine() {
   const [sequence, setSequence] = useState(() => generateSequence());
   const [stats, setStats] = useState({ successes: 0, failures: 0, streak: 0, bestStreak: 0 });
   const [feedback, setFeedback] = useState(null); // null|'success'|'fail'|'fullSuccess'
+  const [frozenProgress, setFrozenProgress] = useState(() => Array(SEGMENT_COUNT).fill(0));
   const [config, setConfig] = useState({
     speedMultiplier: 4.0,
     inputLatency: 0,
@@ -68,6 +69,7 @@ export function useGameEngine() {
       setProgress(0);
       setCurrentNode(0);
       setFeedback(null);
+      setFrozenProgress(Array(SEGMENT_COUNT).fill(0));
       phaseRef.current = 'idle';
       setPhase('idle');
     }, delay);
@@ -100,12 +102,15 @@ export function useGameEngine() {
       return { ...s, successes: s.successes + 1, streak, bestStreak: Math.max(s.bestStreak, streak) };
     };
 
+    const snapProgress = progressRef.current;
+
     if (next >= SEGMENT_COUNT) {
       // ── next === 4 === E — all segments done, lock cracked ──
       phaseRef.current = 'success';
       setPhase('success');
       setFeedback('fullSuccess');
       setStats(bumpStats);
+      setFrozenProgress(fp => { const n = [...fp]; n[completedSrc] = snapProgress; return n; });
       doReset(1100);
     } else {
       // Zero delay: advance immediately — phaseRef stays 'running'
@@ -114,6 +119,7 @@ export function useGameEngine() {
       startTimeRef.current   = null;
       setStats(bumpStats);
       setProgress(0);
+      setFrozenProgress(fp => { const n = [...fp]; n[completedSrc] = snapProgress; return n; });
       setCurrentNode(next);  // triggers the RAF useEffect
     }
   }, [doReset]);
@@ -216,6 +222,7 @@ export function useGameEngine() {
     feedback,
     config,
     updateConfig,
+    frozenProgress,
     sweetSpotStart: SWEET_SPOT_END - config.sweetSpotWidth,
     sweetSpotEnd: SWEET_SPOT_END,
     nodeCount: NODE_COUNT,

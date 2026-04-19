@@ -55,14 +55,14 @@ export function ProgressTrack({ fromPos, toPos, progress, isActive, feedback, sw
       )}
 
       {/* Fill bar */}
-      {isActive && (
+      {(isActive || (!isActive && progress > 0)) && (
         <div style={{
           position: 'absolute',
           inset: 0,
           width: `${p}%`,
-          background: fillColor,
+          background: isActive ? fillColor : '#00ff88',
           borderRadius: TRACK_HEIGHT,
-          boxShadow: `0 0 6px ${fillColor}`,
+          boxShadow: `0 0 6px ${isActive ? fillColor : '#00ff88'}`,
         }} />
       )}
     </div>

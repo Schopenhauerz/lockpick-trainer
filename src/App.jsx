@@ -29,6 +29,7 @@ export default function App() {
     sweetSpotEnd,
     nodeCount,
     segmentCount,
+    frozenProgress,
   } = useGameEngine();
 
   // 5 node positions (CCW from top)
@@ -154,7 +155,7 @@ export default function App() {
             key={`track-${i}`}
             fromPos={edge.from}
             toPos={edge.to}
-            progress={i === currentNode ? progress : 0}
+            progress={i === currentNode ? progress : frozenProgress[i]}
             isActive={i === currentNode && phase === 'running'}
             feedback={feedback}
             sweetSpotStart={sweetSpotStart}
