@@ -250,7 +250,7 @@ export function ConfigPanel({ config, onUpdate }) {
             <Slider
               label="SWEET SPOT WIDTH"
               value={config.sweetSpotWidth}
-              min={0.05}
+              min={0.10}
               max={0.30}
               step={0.01}
               color="#00ff88"
