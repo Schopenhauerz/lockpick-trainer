@@ -186,7 +186,7 @@ export function ConfigPanel({ config, onUpdate }) {
         }}
       >
         <span style={{ fontSize: 14 }}>⚙</span>
-        CONFIG
+        SETTINGS
       </motion.button>
 
       <AnimatePresence>

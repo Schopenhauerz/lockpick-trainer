@@ -8,6 +8,7 @@ import { ProgressTrack } from './components/ProgressTrack';
 import { HUD } from './components/HUD';
 import { ConfigPanel } from './components/ConfigPanel';
 import { FeedbackOverlay } from './components/FeedbackOverlay';
+import { GridMaze } from './components/GridMaze';
 
 const ARENA_W = 520;
 const ARENA_H = 520;
@@ -16,6 +17,8 @@ const CY = ARENA_H / 2;
 const RADIUS = 170;
 
 export default function App() {
+  const [mode, setMode] = useState('lockpick'); // 'lockpick' | 'maze'
+
   const {
     phase,
     progress,
@@ -62,12 +65,16 @@ export default function App() {
       height: '100vh',
       background: '#12121a',
       display: 'flex',
+      flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
       overflow: 'hidden',
       position: 'relative',
     }}>
 
+      {mode === 'maze' && <GridMaze mode={mode} onModeChange={setMode} />}
+
+      {mode === 'lockpick' && <>
       <HUD
         stats={stats}
         phase={phase}
@@ -76,6 +83,8 @@ export default function App() {
         segmentCount={segmentCount}
         sequence={sequence}
         config={config}
+        mode={mode}
+        onModeChange={setMode}
       />
 
       {/* Arena — scaled for mobile, shakes on fail */}
@@ -208,6 +217,7 @@ export default function App() {
           zIndex: 400,
         }} />
       ))}
+      </>}
     </div>
   );
 }

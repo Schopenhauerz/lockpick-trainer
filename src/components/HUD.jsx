@@ -47,7 +47,27 @@ function StatBlock({ label, value, color = '#00aaff', sub }) {
   );
 }
 
-export function HUD({ stats, phase, currentNode, nodeCount, segmentCount, sequence, config }) {
+function ModeSwitcher({ mode, onChange }) {
+  return (
+    <div style={{ display: 'flex', gap: 6 }}>
+      {[{ key: 'lockpick', label: 'LOCKPICK' }, { key: 'maze', label: 'GRID MAZE' }].map(({ key, label }) => (
+        <button
+          key={key}
+          onClick={() => onChange(key)}
+          style={{
+            padding: '4px 10px', fontSize: 10, letterSpacing: 1,
+            background: mode === key ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.03)',
+            border: mode === key ? '1px solid rgba(255,255,255,0.28)' : '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 4, color: mode === key ? '#fff' : 'rgba(255,255,255,0.28)',
+            cursor: 'pointer', fontFamily: 'monospace',
+          }}
+        >{label}</button>
+      ))}
+    </div>
+  );
+}
+
+export function HUD({ stats, phase, currentNode, nodeCount, segmentCount, sequence, config, mode, onModeChange }) {
   // Key the player must press RIGHT NOW (destination of active segment)
   const targetKey  = phase === 'running' ? sequence[currentNode + 1] : null;
   const targetColor = targetKey ? KEY_COLORS[targetKey] : '#00aaff';
@@ -129,8 +149,9 @@ export function HUD({ stats, phase, currentNode, nodeCount, segmentCount, sequen
           </div>
         </div>
 
-        {/* Speed + latency badges */}
+        {/* Mode switcher + speed + latency badges */}
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <ModeSwitcher mode={mode} onChange={onModeChange} />
           <div style={{
             padding: '4px 10px',
             background: '#0a0a18',
@@ -168,7 +189,6 @@ export function HUD({ stats, phase, currentNode, nodeCount, segmentCount, sequen
       }}>
         <StatBlock label="SUCCESSES" value={stats.successes} color="#00ff88" />
         <StatBlock label="FAILURES"  value={stats.failures}  color="#ff2244" />
-        <StatBlock label="STREAK"    value={stats.streak}    color="#ffdd00" sub={stats.bestStreak} />
       </div>
 
       {/* ── IDLE overlay ────────────────────────────────────────────────── */}
