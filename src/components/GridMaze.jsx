@@ -40,9 +40,11 @@ function createAlarm(volume) {
   };
 }
 
-const GRID          = 6;
-const CELL          = 80;
-const GAP           = 4;
+const GRID       = 6;
+const CELL       = 80;
+const INNER_GAP  = 3;   // between arrows inside a cell
+const OUTER_GAP  = 7;   // between cells (provides subtle 2×2 rhythm)
+const CELL_PAD   = 2;
 const DEFAULT_TIMER = 20;
 
 const SYMBOLS  = { ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→' };
@@ -56,17 +58,37 @@ function getDelta(dir) {
 }
 
 function generateCells() {
-  return Array.from({ length: GRID }, () =>
+  const grid = Array.from({ length: GRID }, () =>
     Array.from({ length: GRID }, () => ({
       arrows: Array.from({ length: 4 }, () => ALL_DIRS[Math.floor(Math.random() * ALL_DIRS.length)]),
     }))
   );
+  // Start cell: only right/down arrows (left/up go out of bounds)
+  const VALID_START = ['ArrowRight', 'ArrowDown'];
+  grid[0][0].arrows = Array.from({ length: 4 }, () => VALID_START[Math.floor(Math.random() * 2)]);
+
+  // Each row must have at least one cell with a down arrow so the player can always descend
+  for (let r = 0; r < GRID; r++) {
+    const hasDown = grid[r].some(cell => cell.arrows.includes('ArrowDown'));
+    if (!hasDown) {
+      const col = Math.floor(Math.random() * GRID);
+      grid[r][col].arrows[Math.floor(Math.random() * 4)] = 'ArrowDown';
+    }
+  }
+
+  // Finish cell: must have a down arrow to exit (already covered by row loop for last row, but be explicit)
+  const br = grid[GRID - 1][GRID - 1];
+  if (!br.arrows.includes('ArrowDown')) {
+    br.arrows[Math.floor(Math.random() * 4)] = 'ArrowDown';
+  }
+  return grid;
 }
 
 function isStuck(row, col, visited, arrows) {
-  // Only check directions the cell actually offers
+  const isFinishCell = row === GRID - 1 && col === GRID - 1;
   const available = [...new Set(arrows)];
   return available.every(dir => {
+    if (isFinishCell && dir === 'ArrowDown') return false; // exit is always open
     const { dr, dc } = getDelta(dir);
     const nr = row + dr, nc = col + dc;
     return nr < 0 || nr >= GRID || nc < 0 || nc >= GRID || visited.has(`${nr}-${nc}`);
@@ -79,7 +101,6 @@ function timerColor(ratio) {
   return '#ff4466';
 }
 
-// ── Shared mode switcher (mirrors HUD's version) ──────────────────────────────
 function ModeSwitcher({ mode, onChange }) {
   return (
     <div style={{ display: 'flex', gap: 6 }}>
@@ -100,7 +121,6 @@ function ModeSwitcher({ mode, onChange }) {
   );
 }
 
-// ── Stat block (mirrors HUD's StatBlock) ─────────────────────────────────────
 function StatBlock({ label, value, color }) {
   return (
     <div style={{
@@ -116,7 +136,6 @@ function StatBlock({ label, value, color }) {
   );
 }
 
-// ── Settings panel ────────────────────────────────────────────────────────────
 function MazeConfig({ timerSecs, onTimerChange, volume, onVolumeChange }) {
   const [open, setOpen] = useState(false);
 
@@ -172,25 +191,21 @@ function MazeConfig({ timerSecs, onTimerChange, volume, onVolumeChange }) {
           <div style={{ fontSize: 10, letterSpacing: 4, color: '#00aaff', marginBottom: 18, borderBottom: '1px solid #1a1a2e', paddingBottom: 10 }}>
             SETTINGS
           </div>
-          <SliderRow label="TIME LIMIT" value={timerSecs} min={5} max={60} step={5} onChange={onTimerChange} display={`${timerSecs}s`} />
-          <SliderRow label="ALARM VOLUME" value={volume} min={0} max={1} step={0.05} onChange={onVolumeChange} display={`${Math.round(volume * 100)}%`} />
+          <SliderRow label="TIME LIMIT"   value={timerSecs} min={5}  max={60} step={5}    onChange={onTimerChange}  display={`${timerSecs}s`} />
+          <SliderRow label="ALARM VOLUME" value={volume}    min={0}  max={1}  step={0.05} onChange={onVolumeChange} display={`${Math.round(volume * 100)}%`} />
         </div>
       )}
     </div>
   );
 }
 
-// ── Grid cell ─────────────────────────────────────────────────────────────────
-function Cell({ cell, isActive, isVisited, shake, onPick }) {
+// ── Flat grid cell — no card, just transparent container ──────────────────────
+function Cell({ cell, isActive, isVisited, onPick }) {
   return (
     <div style={{
       width: CELL, height: CELL,
       display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr',
-      gap: 3, padding: 5, boxSizing: 'border-box',
-      background: isActive  ? 'rgba(0,150,255,0.13)'          : isVisited ? 'rgba(0,255,136,0.06)' : 'rgba(255,255,255,0.03)',
-      border:     isActive  ? '1px solid rgba(0,150,255,0.55)' : isVisited ? '1px solid rgba(0,255,136,0.22)' : '1px solid rgba(255,255,255,0.07)',
-      borderRadius: 6,
-      animation: shake ? 'mazeShake 0.3s ease' : 'none',
+      gap: INNER_GAP, padding: CELL_PAD, boxSizing: 'border-box',
     }}>
       {cell.arrows.map((dir, i) => (
         <button
@@ -199,11 +214,23 @@ function Cell({ cell, isActive, isVisited, shake, onPick }) {
           style={{
             width: '100%', height: '100%',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: isActive ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
-            border:     isActive ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(255,255,255,0.06)',
-            borderRadius: 3,
-            color:  isActive ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.18)',
-            fontSize: 15, cursor: isActive ? 'pointer' : 'default',
+            background: isActive
+              ? 'rgba(0,150,255,0.18)'
+              : isVisited
+                ? 'rgba(0,255,136,0.07)'
+                : 'rgba(255,255,255,0.04)',
+            border: isActive
+              ? '1px solid rgba(0,150,255,0.38)'
+              : isVisited
+                ? '1px solid rgba(0,255,136,0.14)'
+                : '1px solid rgba(255,255,255,0.06)',
+            borderRadius: 2,
+            color: isActive
+              ? 'rgba(255,255,255,0.90)'
+              : isVisited
+                ? 'rgba(255,255,255,0.28)'
+                : 'rgba(255,255,255,0.17)',
+            fontSize: 13, cursor: isActive ? 'pointer' : 'default',
             padding: 0, lineHeight: 1, fontFamily: 'monospace',
             transition: 'background 0.1s',
           }}
@@ -221,8 +248,7 @@ export function GridMaze({ mode, onModeChange }) {
   const [cells,     setCells]     = useState(() => generateCells());
   const [playerPos, setPlayerPos] = useState({ row: 0, col: 0 });
   const [visited,   setVisited]   = useState(() => new Set(['0-0']));
-  const [phase,     setPhase]     = useState('playing');
-  const [shake,     setShake]     = useState(false);
+  const [phase,     setPhase]     = useState('idle');
   const [flashFail, setFlashFail] = useState(false);
   const [stats,     setStats]     = useState({ success: 0, fail: 0 });
   const [timeRatio, setTimeRatio] = useState(1);
@@ -241,7 +267,6 @@ export function GridMaze({ mode, onModeChange }) {
     if (alarmRef.current) { alarmRef.current.stop(); alarmRef.current = null; }
   }, []);
 
-  // Stop alarm when unmounting (mode switch)
   useEffect(() => stopAlarm, [stopAlarm]);
 
   const goToStart = useCallback(() => {
@@ -249,7 +274,6 @@ export function GridMaze({ mode, onModeChange }) {
     phaseRef.current = 'idle';
     setScreen('start');
     setPhase('idle');
-    setShake(false);
     setFlashFail(false);
   }, [stopAlarm]);
 
@@ -260,7 +284,6 @@ export function GridMaze({ mode, onModeChange }) {
     setPlayerPos({ row: 0, col: 0 });
     setVisited(new Set(['0-0']));
     setPhase('playing');
-    setShake(false);
     setFlashFail(false);
     setTimeRatio(1);
     setScreen('playing');
@@ -304,23 +327,25 @@ export function GridMaze({ mode, onModeChange }) {
   const handlePick = useCallback((dir) => {
     if (phaseRef.current !== 'playing') return;
     const { row, col } = playerPos;
-    const { dr, dc }   = getDelta(dir);
-    const nr = row + dr, nc = col + dc;
-    const outOfBounds = nr < 0 || nr >= GRID || nc < 0 || nc >= GRID;
-    const alreadySeen = !outOfBounds && visited.has(`${nr}-${nc}`);
-    if (outOfBounds || alreadySeen) { triggerFail(); return; }
-    const newVisited = new Set(visited);
-    newVisited.add(`${nr}-${nc}`);
-    if (nr === GRID - 1 && nc === GRID - 1) {
+
+    // Exit: clicking down from finish cell = win
+    if (row === GRID - 1 && col === GRID - 1 && dir === 'ArrowDown') {
       phaseRef.current = 'success';
       stopAlarm();
-      setPlayerPos({ row: nr, col: nc });
-      setVisited(newVisited);
       setPhase('success');
       setStats(s => ({ ...s, success: s.success + 1 }));
       setTimeout(goToStart, 1000);
       return;
     }
+
+    const { dr, dc } = getDelta(dir);
+    const nr = row + dr, nc = col + dc;
+    const outOfBounds = nr < 0 || nr >= GRID || nc < 0 || nc >= GRID;
+    const alreadySeen = !outOfBounds && visited.has(`${nr}-${nc}`);
+    if (outOfBounds || alreadySeen) { triggerFail(); return; }
+
+    const newVisited = new Set(visited);
+    newVisited.add(`${nr}-${nc}`);
     setPlayerPos({ row: nr, col: nc });
     setVisited(newVisited);
     if (isStuck(nr, nc, newVisited, cells[nr][nc].arrows)) {
@@ -332,9 +357,10 @@ export function GridMaze({ mode, onModeChange }) {
     }
   }, [playerPos, visited, triggerFail, goToStart, stopAlarm, cells]);
 
-  const totalW    = GRID * CELL + (GRID - 1) * GAP;
-  const color     = timerColor(timeRatio);
-  const secsLeft  = Math.ceil(timeRatio * timerSecs);
+  const totalW   = GRID * CELL + (GRID - 1) * OUTER_GAP;
+  const totalH   = GRID * CELL + (GRID - 1) * OUTER_GAP;
+  const color    = timerColor(timeRatio);
+  const secsLeft = Math.ceil(timeRatio * timerSecs);
   const timerDisp = screen === 'playing' ? `${secsLeft}s` : `${timerSecs}s`;
 
   return (
@@ -347,7 +373,6 @@ export function GridMaze({ mode, onModeChange }) {
         background: 'linear-gradient(180deg, #07070e 0%, transparent 100%)',
         zIndex: 50,
       }}>
-        {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
             width: 32, height: 32, border: '2px solid #00aaff', borderRadius: 6,
@@ -362,14 +387,12 @@ export function GridMaze({ mode, onModeChange }) {
           </div>
         </div>
 
-        {/* Center: step counter while playing */}
         <div style={{ fontSize: 10, color: '#252535', letterSpacing: 1, fontFamily: 'Courier New' }}>
           {screen === 'playing'
             ? `${[...visited].length - 1} / ${GRID * 2 - 2} steps`
             : 'reach bottom-right'}
         </div>
 
-        {/* Right: mode switcher + timer badge */}
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <ModeSwitcher mode={mode} onChange={onModeChange} />
           <div style={{
@@ -377,8 +400,7 @@ export function GridMaze({ mode, onModeChange }) {
             border: `1px solid ${screen === 'playing' ? color + '66' : '#1a1a2e'}`,
             borderRadius: 4, fontSize: 10,
             color: screen === 'playing' ? color : '#00aaff',
-            letterSpacing: 1,
-            transition: 'color 0.4s, border-color 0.4s',
+            letterSpacing: 1, transition: 'color 0.4s, border-color 0.4s',
           }}>
             {timerDisp}
           </div>
@@ -402,7 +424,7 @@ export function GridMaze({ mode, onModeChange }) {
         <StatBlock label="FAILURES"  value={stats.fail}    color="#ff2244" />
       </div>
 
-      {/* ── Bottom-right config ───────────────────────────────────────────── */}
+      {/* ── Bottom-right settings ─────────────────────────────────────────── */}
       <MazeConfig timerSecs={timerSecs} onTimerChange={setTimerSecs} volume={volume} onVolumeChange={setVolume} />
 
       {/* ── Center content ───────────────────────────────────────────────── */}
@@ -412,22 +434,29 @@ export function GridMaze({ mode, onModeChange }) {
       }}>
         {screen === 'start' && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, fontFamily: 'monospace' }}>
-            {/* Dim preview */}
+            {/* Dim flat preview */}
             <div style={{
-              position: 'relative', width: totalW, opacity: 0.13, pointerEvents: 'none',
+              opacity: 0.12, pointerEvents: 'none',
               display: 'grid',
               gridTemplateColumns: `repeat(${GRID}, ${CELL}px)`,
               gridTemplateRows: `repeat(${GRID}, ${CELL}px)`,
-              gap: GAP,
+              gap: OUTER_GAP,
             }}>
               {Array.from({ length: GRID * GRID }, (_, i) => (
                 <div key={i} style={{
                   width: CELL, height: CELL,
-                  background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
-                  borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'rgba(255,255,255,0.4)', fontSize: 18,
+                  display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr',
+                  gap: INNER_GAP, padding: CELL_PAD, boxSizing: 'border-box',
                 }}>
-                  {SYMBOLS[ALL_DIRS[i % 4]]}
+                  {[0,1,2,3].map(j => (
+                    <div key={j} style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
+                      borderRadius: 2, color: 'rgba(255,255,255,0.4)', fontSize: 13,
+                    }}>
+                      {SYMBOLS[ALL_DIRS[(i + j) % 4]]}
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>
@@ -454,26 +483,31 @@ export function GridMaze({ mode, onModeChange }) {
         )}
 
         {screen === 'playing' && (
-          <div style={{ position: 'relative', width: totalW }}>
+          <div style={{ position: 'relative', width: totalW, height: totalH }}>
+            {/* Start indicator — left of top-left cell */}
             <div style={{ position: 'absolute', left: -7, top: 0, width: 3, height: CELL, background: '#00aaff', borderRadius: 2 }} />
-            <div style={{ position: 'absolute', right: -7, bottom: 0, width: 3, height: CELL, background: '#00aaff', borderRadius: 2 }} />
+            {/* Finish indicator — below bottom-right cell */}
+            <div style={{ position: 'absolute', bottom: -7, right: 0, width: CELL, height: 3, background: '#00aaff', borderRadius: 2 }} />
+
             {/* Fail flash overlay */}
             {flashFail && (
               <div style={{
-                position: 'absolute', inset: 0, zIndex: 20, borderRadius: 6, pointerEvents: 'none',
+                position: 'absolute', inset: 0, zIndex: 20, pointerEvents: 'none',
                 animation: 'gridFailFlash 0.9s ease forwards',
               }} />
             )}
+
+            {/* Flat unified grid */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: `repeat(${GRID}, ${CELL}px)`,
               gridTemplateRows: `repeat(${GRID}, ${CELL}px)`,
-              gap: GAP,
+              gap: OUTER_GAP,
             }}>
               {Array.from({ length: GRID }, (_, row) =>
                 Array.from({ length: GRID }, (_, col) => {
-                  const key       = `${row}-${col}`;
-                  const isActive  = playerPos.row === row && playerPos.col === col && phase === 'playing';
+                  const key      = `${row}-${col}`;
+                  const isActive = playerPos.row === row && playerPos.col === col && phase === 'playing';
                   const isVisited = visited.has(key) && !isActive;
                   return (
                     <Cell
@@ -481,7 +515,6 @@ export function GridMaze({ mode, onModeChange }) {
                       cell={cells[row][col]}
                       isActive={isActive}
                       isVisited={isVisited}
-                      shake={isActive && shake}
                       onPick={handlePick}
                     />
                   );
@@ -493,13 +526,6 @@ export function GridMaze({ mode, onModeChange }) {
       </div>
 
       <style>{`
-        @keyframes mazeShake {
-          0%,100% { transform: translateX(0); }
-          20%     { transform: translateX(-6px); }
-          40%     { transform: translateX(6px); }
-          60%     { transform: translateX(-4px); }
-          80%     { transform: translateX(4px); }
-        }
         @keyframes gridFailFlash {
           0%   { background: rgba(255,30,60,0.0); }
           15%  { background: rgba(255,30,60,0.55); }
